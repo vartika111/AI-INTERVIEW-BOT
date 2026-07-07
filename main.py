@@ -1,9 +1,16 @@
 import sys
-from src.services.llm_client import MockLLMClient
+import os
+from src.services.llm_client import MockLLMClient, OpenAIClient
 from src.services.question_generator import QuestionGenerator
 from src.services.evaluator import Evaluator
 from src.services.interview_manager import InterviewManager
 from src.database.storage import InMemoryStorage
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 def print_separator(char: str = "=", length: int = 60) -> None:
     print(char * length)
@@ -66,8 +73,19 @@ def main() -> None:
 
     print("\nInitializing interview session...")
     
-    # 4. Initialize dependencies
-    llm_client = MockLLMClient()
+    # 4. Initialize dependencies dynamically
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key:
+        try:
+            print("\n[INFO] OPENAI_API_KEY detected. Initializing OpenAIClient...")
+            llm_client = OpenAIClient(api_key=openai_key)
+        except Exception as e:
+            print(f"\n[WARNING] Failed to load OpenAIClient: {e}. Falling back to MockLLMClient...")
+            llm_client = MockLLMClient()
+    else:
+        print("\n[INFO] No OPENAI_API_KEY detected in environment. Using MockLLMClient...")
+        llm_client = MockLLMClient()
+
     generator = QuestionGenerator(llm_client)
     evaluator = Evaluator(llm_client)
     storage = InMemoryStorage()
