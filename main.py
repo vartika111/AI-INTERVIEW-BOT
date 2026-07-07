@@ -5,7 +5,7 @@ from src.services.question_generator import QuestionGenerator
 from src.services.evaluator import Evaluator
 from src.services.interview_manager import InterviewManager
 from src.services.follow_up_question_generator import FollowUpQuestionGenerator
-from src.database.storage import InMemoryStorage
+from src.database import InMemoryStorage, InterviewRepository
 
 try:
     from dotenv import load_dotenv
@@ -92,7 +92,6 @@ def main() -> None:
     
     # Use SQLite database storage by default
     try:
-        from src.database.sqlite_repository import InterviewRepository
         print("\n[INFO] Initializing SQLite database storage (interview_bot.db)...")
         storage = InterviewRepository(db_path="interview_bot.db")
     except Exception as e:
