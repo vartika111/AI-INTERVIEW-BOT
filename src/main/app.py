@@ -31,7 +31,7 @@ def run_mock_interview() -> None:
     # 3. Generate questions
     print("\nGenerating questions for domain: Python...")
     # Using generator to produce list of Question models
-    questions = generator.generate_questions(domain="Python", count=3)
+    questions = generator.generate_questions(topic="Python", difficulty="Medium", count=3)
     for q in questions:
         print(q.display_question())
 

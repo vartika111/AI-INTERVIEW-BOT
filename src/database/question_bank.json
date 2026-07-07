@@ -1,0 +1,172 @@
+{
+  "Java": {
+    "Easy": [
+      {
+        "id": "Q-JAVA-01",
+        "questionText": "What is the difference between '==' and '.equals()' in Java?",
+        "expectedConcepts": ["reference equality", "value equality", "String constant pool", "equals method overriding"]
+      },
+      {
+        "id": "Q-JAVA-02",
+        "questionText": "What are the access modifiers in Java and what are their scopes?",
+        "expectedConcepts": ["public", "private", "protected", "default package scope", "class access restriction"]
+      }
+    ],
+    "Medium": [
+      {
+        "id": "Q-JAVA-03",
+        "questionText": "Explain the differences between Abstract Classes and Interfaces in Java 8 and beyond.",
+        "expectedConcepts": ["multiple inheritance", "default methods", "state encapsulation", "abstract keyword", "interface implementation"]
+      },
+      {
+        "id": "Q-JAVA-04",
+        "questionText": "What is the Java Garbage Collector and how does generational garbage collection work?",
+        "expectedConcepts": ["JVM memory structures", "Young/Old generations", "Mark and Sweep", "Minor vs Major GC"]
+      }
+    ],
+    "Hard": [
+      {
+        "id": "Q-JAVA-05",
+        "questionText": "Explain Java's memory model (JMM), thread stack vs heap, and the volatile keyword.",
+        "expectedConcepts": ["thread visibility", "instruction reordering", "happens-before relationship", "volatile cache sync"]
+      }
+    ]
+  },
+  "Python": {
+    "Easy": [
+      {
+        "id": "Q-PYTHON-01",
+        "questionText": "What are Python lists and how do they differ from tuples?",
+        "expectedConcepts": ["mutability vs immutability", "syntax differences", "performance memory differences", "hashing capability"]
+      },
+      {
+        "id": "Q-PYTHON-02",
+        "questionText": "Explain decorators in Python and write a simple wrapper concept.",
+        "expectedConcepts": ["higher-order functions", "callable wrapping", "decorator syntax", "closure functions"]
+      }
+    ],
+    "Medium": [
+      {
+        "id": "Q-PYTHON-03",
+        "questionText": "Explain generators and the yield keyword in Python.",
+        "expectedConcepts": ["yield state preservation", "lazy evaluation", "memory efficiency", "iterator protocol"]
+      },
+      {
+        "id": "Q-PYTHON-04",
+        "questionText": "Explain memory management and garbage collection in Python.",
+        "expectedConcepts": ["reference counting", "generational garbage collector", "cyclic reference detection", "gc module"]
+      },
+      {
+        "id": "Q-PYTHON-06",
+        "questionText": "Explain the differences between deep copy and shallow copy in Python, and how to perform each.",
+        "expectedConcepts": ["copy module", "nested objects references", "deepcopy() vs copy()", "mutability side-effects"]
+      }
+    ],
+    "Hard": [
+      {
+        "id": "Q-PYTHON-05",
+        "questionText": "Explain the Global Interpreter Lock (GIL) and how it affects multi-threaded CPU-bound programs.",
+        "expectedConcepts": ["GIL mechanism", "CPU-bound vs I/O-bound", "concurrency vs parallelism restriction", "multiprocessing module"]
+      }
+    ]
+  },
+  "DSA": {
+    "Easy": [
+      {
+        "id": "Q-DSA-01",
+        "questionText": "Explain arrays and linked lists, and compare their search and insertion time complexities.",
+        "expectedConcepts": ["contiguous memory indexes", "node pointer links", "O(1) access vs O(N) search", "O(1) insertion vs shifting overhead"]
+      },
+      {
+        "id": "Q-DSA-02",
+        "questionText": "What is a queue and how does it differ from a stack?",
+        "expectedConcepts": ["FIFO vs LIFO", "enqueue/dequeue", "push/pop", "underlying implementations"]
+      }
+    ],
+    "Medium": [
+      {
+        "id": "Q-DSA-03",
+        "questionText": "Explain the differences between Breadth-First Search (BFS) and Depth-First Search (DFS) on trees.",
+        "expectedConcepts": ["queue traversal", "stack/recursion traversal", "level-order structure", "time complexity O(V+E)"]
+      },
+      {
+        "id": "Q-DSA-04",
+        "questionText": "What is a Hash Table and how are key collisions handled?",
+        "expectedConcepts": ["hash functions", "chaining link nodes", "open addressing probing", "O(1) average lookup time"]
+      }
+    ],
+    "Hard": [
+      {
+        "id": "Q-DSA-05",
+        "questionText": "Explain the concept of Dynamic Programming and how it differs from Divide and Conquer.",
+        "expectedConcepts": ["overlapping subproblems", "optimal substructure", "memoization cache", "tabulation bottom-up approach"]
+      }
+    ]
+  },
+  "OOP": {
+    "Easy": [
+      {
+        "id": "Q-OOP-01",
+        "questionText": "Explain the four core principles of Object-Oriented Programming.",
+        "expectedConcepts": ["encapsulation details", "inheritance details", "polymorphism details", "abstraction details"]
+      },
+      {
+        "id": "Q-OOP-02",
+        "questionText": "What is the difference between class composition and inheritance?",
+        "expectedConcepts": ["has-a relationship composition", "is-a relationship subclassing", "loose coupling", "code reusability levels"]
+      }
+    ],
+    "Medium": [
+      {
+        "id": "Q-OOP-03",
+        "questionText": "Explain method overloading vs method overriding with code examples.",
+        "expectedConcepts": ["compile-time static polymorphism", "run-time dynamic polymorphism", "method signatures", "virtual tables"]
+      },
+      {
+        "id": "Q-OOP-04",
+        "questionText": "What are the SOLID design principles? Summarize each briefly.",
+        "expectedConcepts": ["single responsibility", "open/closed extension", "liskov substitution subtypes", "interface segregation", "dependency inversion injection"]
+      }
+    ],
+    "Hard": [
+      {
+        "id": "Q-OOP-05",
+        "questionText": "Explain creational, structural, and behavioral patterns, and describe Singleton, Factory, and Observer.",
+        "expectedConcepts": ["design patterns categorization", "singleton global instances", "factory method objects instantiating", "observer notifications binding"]
+      }
+    ]
+  },
+  "SQL": {
+    "Easy": [
+      {
+        "id": "Q-SQL-01",
+        "questionText": "What is the difference between INNER JOIN, LEFT JOIN, and RIGHT JOIN?",
+        "expectedConcepts": ["intersect matching values", "left primary tables inclusion", "right secondary tables inclusion", "null value padding"]
+      },
+      {
+        "id": "Q-SQL-02",
+        "questionText": "What are primary keys and foreign keys in relational databases?",
+        "expectedConcepts": ["uniqueness indices", "non-null columns", "referential constraints integrity", "parent-child row relation"]
+      }
+    ],
+    "Medium": [
+      {
+        "id": "Q-SQL-03",
+        "questionText": "Explain GROUP BY, HAVING, and how HAVING differs from WHERE.",
+        "expectedConcepts": ["aggregating rows", "filtering aggregated sets", "filtering initial rows before aggregates"]
+      },
+      {
+        "id": "Q-SQL-04",
+        "questionText": "What are database indexes and how do they speed up lookups at the expense of write overhead?",
+        "expectedConcepts": ["B-Tree indexing keys", "index scanning execution path", "INSERT/UPDATE indexing rebuild logs"]
+      }
+    ],
+    "Hard": [
+      {
+        "id": "Q-SQL-05",
+        "questionText": "Explain database normalization forms (1NF, 2NF, 3NF, BCNF) and why we normalize data structures.",
+        "expectedConcepts": ["redundancy reduction", "update insertion anomalies", "functional dependencies matching", "transitive dependency removals"]
+      }
+    ]
+  }
+}
