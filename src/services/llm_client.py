@@ -1,4 +1,5 @@
 import os
+import json
 from abc import ABC, abstractmethod
 from typing import Optional
 from ..models.question import Question
@@ -51,7 +52,14 @@ class MockLLMClient(LLMClient):
         return "Mock LLM text completion response."
 
     def evaluate_answer(self, question: Question, answer: str) -> str:
-        return f"Score: 8/10\nFeedback: Candidate answered '{answer}' which covers '{question.topic}'."
+        data = {
+            "score": 8.0,
+            "correctness": "Correct concept explanation. (Score: 8/10)",
+            "explanation": f"Candidate answered '{answer}' which covers '{question.topic}'.",
+            "strengths": ["Strong understanding of syntax", "Correct usage of standard concepts"],
+            "improvements": ["Could detail system design considerations further"]
+        }
+        return json.dumps(data)
 
     def generate_follow_up(self, question: Question, answer: str) -> str:
         return f"Interesting answer on '{question.topic}'. Can you elaborate on the expected concepts: {', '.join(question.expected_concepts)}?"
@@ -113,8 +121,15 @@ class OpenAIClient(LLMClient):
             f"Topic: {question.topic} | Difficulty: {question.difficulty}\n"
             f"Expected Concepts: {', '.join(question.expected_concepts)}\n\n"
             f"Candidate's Answer:\n\"{answer}\"\n\n"
-            f"Provide a numeric score out of 10.0 and structured feedback addressing strengths, "
-            f"weaknesses, and coverage of expected concepts. Be brief and professional."
+            f"You MUST return a JSON object with the following schema:\n"
+            f"{{\n"
+            f"  \"score\": <float value between 0.0 and 10.0>,\n"
+            f"  \"correctness\": \"<brief evaluation of correctness>\",\n"
+            f"  \"explanation\": \"<detailed explanation of what was correct or missing>\",\n"
+            f"  \"strengths\": [\"<strength 1>\", \"<strength 2>\"],\n"
+            f"  \"improvements\": [\"<improvement 1>\", \"<improvement 2>\"]\n"
+            f"}}\n"
+            f"Respond ONLY with the raw JSON block. Do not include any additional markdown, formatting, wrapper or conversational text."
         )
         return self.generate_response(prompt)
 
