@@ -151,7 +151,13 @@ class Evaluator:
         for question in interview.questions:
             answer = interview.answers.get(question.id, "")
             
-            q_result = self.evaluate(question, answer)
+            if hasattr(interview, "evaluations") and question.id in interview.evaluations:
+                q_result = interview.evaluations[question.id]
+            else:
+                q_result = self.evaluate(question, answer)
+                if hasattr(interview, "evaluations"):
+                    interview.evaluations[question.id] = q_result
+            
             total_score += q_result.score
             
             detailed_evaluations.append({

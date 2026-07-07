@@ -15,6 +15,7 @@ class Interview:
         
         # Legacy attributes from Step 1 to keep app.py working
         self.answers: Dict[str, str] = {}
+        self.evaluations: Dict[str, Result] = {}
         self.result: Optional[Result] = None
 
     # Getters and Setters for encapsulation
@@ -80,6 +81,16 @@ class Interview:
     def addQuestion(self, question: Question) -> None:
         """CamelCase alias for add_question."""
         self.add_question(question)
+
+    def insert_question(self, index: int, question: Question) -> None:
+        """Inserts a question at a specific index in the interview session."""
+        if self._status not in ("CREATED", "IN_PROGRESS"):
+            raise ValueError("Cannot insert questions once the interview has completed")
+        self._questions.insert(index, question)
+
+    def insertQuestion(self, index: int, question: Question) -> None:
+        """CamelCase alias for insert_question."""
+        self.insert_question(index, question)
 
     def next_question(self) -> Optional[Question]:
         """

@@ -4,6 +4,7 @@ from src.services.llm_client import MockLLMClient, OpenAIClient
 from src.services.question_generator import QuestionGenerator
 from src.services.evaluator import Evaluator
 from src.services.interview_manager import InterviewManager
+from src.services.follow_up_question_generator import FollowUpQuestionGenerator
 from src.database.storage import InMemoryStorage
 
 try:
@@ -88,8 +89,18 @@ def main() -> None:
 
     generator = QuestionGenerator(llm_client)
     evaluator = Evaluator(llm_client)
-    storage = InMemoryStorage()
-    manager = InterviewManager(generator, evaluator, storage)
+    
+    # Use SQLite database storage by default
+    try:
+        from src.database.sqlite_repository import InterviewRepository
+        print("\n[INFO] Initializing SQLite database storage (interview_bot.db)...")
+        storage = InterviewRepository(db_path="interview_bot.db")
+    except Exception as e:
+        print(f"\n[WARNING] Failed to initialize SQLite storage: {e}. Falling back to InMemoryStorage...")
+        storage = InMemoryStorage()
+
+    follow_up_generator = FollowUpQuestionGenerator(llm_client)
+    manager = InterviewManager(generator, evaluator, storage, follow_up_generator)
 
     # 5. Create and Start Interview
     try:
@@ -115,11 +126,15 @@ def main() -> None:
     print_separator()
 
     # 6. Conduct Interview Loop
-    question_count = len(interview.questions)
-    for index in range(question_count):
+    index = 0
+    while True:
         question = manager.get_next_question(interview.interview_id)
         if not question:
             break
+
+        # Fetch the updated interview state to dynamically handle inserted follow-ups
+        current_interview = manager.get_interview(interview.interview_id)
+        question_count = len(current_interview.questions)
 
         print(f"\nQuestion {index + 1} of {question_count}:")
         print(question.display_question())
@@ -132,6 +147,7 @@ def main() -> None:
         # Submit answer to manager
         manager.submit_answer(interview.interview_id, question.id, answer)
         print("Response recorded successfully.")
+        index += 1
 
     # 7. Complete Interview and Print Report
     print("\nConcluding interview. Evaluating your answers...")

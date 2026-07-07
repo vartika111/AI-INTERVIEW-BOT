@@ -92,5 +92,60 @@ class TestInterviewManager(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.manager.submit_answer(interview.interview_id, "Q-INVALID-ID", "Some answer")
 
+    def test_adaptive_follow_up_flow(self):
+        """Tests that submitting an answer triggers evaluator, follow-up generator, and inserts follow-up question."""
+        from src.services.follow_up_question_generator import FollowUpQuestionGenerator
+        
+        # Instantiate FollowUpQuestionGenerator and assign to self.manager
+        follow_up_generator = FollowUpQuestionGenerator(self.llm_client)
+        self.manager._follow_up_generator = follow_up_generator
+
+        # Create interview with 2 questions
+        interview = self.manager.create_interview(
+            name="Eve",
+            email="eve@example.com",
+            topic="SQL",
+            difficulty="Easy",
+            count=2
+        )
+        
+        initial_q_count = len(interview.questions)
+        self.assertEqual(initial_q_count, 2)
+        q1_id = interview.questions[0].id
+        
+        # 1. Fetch first question
+        q1 = self.manager.get_next_question(interview.interview_id)
+        self.assertEqual(q1.id, q1_id)
+        
+        # 2. Submit answer
+        # The MockLLMClient evaluates this to score=8.0 (high score)
+        # FollowUpQuestionGenerator should generate a conceptual follow-up
+        self.manager.submit_answer(interview.interview_id, q1.id, "Mock answer")
+        
+        # Reload interview to check state
+        updated_interview = self.manager.get_interview(interview.interview_id)
+        self.assertEqual(len(updated_interview.questions), 3) # One follow-up question inserted
+        
+        # The follow-up question should be inserted right after q1 (index 1)
+        follow_up_question = updated_interview.questions[1]
+        self.assertEqual(follow_up_question.id, f"{q1_id}-followup")
+        self.assertEqual(follow_up_question.topic, q1.topic)
+        self.assertEqual(follow_up_question.difficulty, q1.difficulty)
+        
+        # 3. Retrieve follow-up question next
+        next_q = self.manager.get_next_question(interview.interview_id)
+        self.assertEqual(next_q.id, follow_up_question.id)
+        
+        # 4. Submit answer for the follow-up question.
+        # Since it is a follow-up, it should NOT trigger another follow-up question.
+        self.manager.submit_answer(interview.interview_id, next_q.id, "Follow-up answer")
+        
+        final_interview = self.manager.get_interview(interview.interview_id)
+        self.assertEqual(len(final_interview.questions), 3) # Still 3 questions, no recursion
+        
+        # 5. Retrieve the next main question (original second question)
+        q2 = self.manager.get_next_question(interview.interview_id)
+        self.assertEqual(q2.id, final_interview.questions[2].id)
+
 if __name__ == "__main__":
     unittest.main()
