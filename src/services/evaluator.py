@@ -18,10 +18,10 @@ class Evaluator:
         total_score = 0.0
 
         for question in interview.questions:
-            answer = interview.answers.get(question.question_id, "No answer provided.")
+            answer = interview.answers.get(question.id, "No answer provided.")
             
             # Placeholder LLM evaluation prompt/parsing
-            prompt = f"Evaluate this answer: {answer} for question: {question.text}"
+            prompt = f"Evaluate this answer: {answer} for question: {question.question_text}"
             llm_response = self.llm_client.generate(prompt)
 
             # Assigning mock scores for now
@@ -29,7 +29,7 @@ class Evaluator:
             total_score += mock_score
 
             detailed_evaluations.append({
-                "question_id": question.question_id,
+                "question_id": question.id,
                 "score": mock_score,
                 "feedback": f"LLM Feedback details: {llm_response}"
             })
@@ -38,8 +38,10 @@ class Evaluator:
         average_score = (total_score / num_questions) if num_questions > 0 else 0.0
 
         return Result(
-            interview_id=interview.interview_id,
             score=average_score,
-            overall_feedback="Good performance across technical areas.",
+            feedback="Good performance across technical areas.",
+            strengths=["Strong understanding of syntax", "Correct usage of standard concepts"],
+            weaknesses=["Could detail system design considerations further"],
+            interview_id=interview.interview_id,
             detailed_evaluations=detailed_evaluations
         )

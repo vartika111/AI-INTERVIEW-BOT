@@ -19,10 +19,10 @@ class QuestionGenerator:
             q_id = f"Q-{domain.upper()}-{i:02d}"
             text = f"Describe a core concept or solve a problem in {domain} (Sample Question {i})."
             questions.append(Question(
-                question_id=q_id,
-                text=text,
-                domain=domain,
+                id=q_id,
+                topic=domain,
                 difficulty="Medium",
-                rubric=f"Criteria for evaluated concept in {domain}"
+                question_text=text,
+                expected_concepts=[f"Criteria for evaluated concept in {domain}"]
             ))
         return questions
