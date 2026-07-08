@@ -24,15 +24,28 @@ class InterviewManager:
         self._storage: Storage = storage
         self._follow_up_generator: Optional[FollowUpQuestionGenerator] = follow_up_generator
 
-    def create_interview(self, name: str, email: str, topic: str, difficulty: str, count: int = 3) -> Interview:
+    def create_interview(self, name: str, email: str, topic: str, difficulty: str, count: int = 3, candidate_id: Optional[str] = None) -> Interview:
         """
         Initializes a candidate profile, fetches matching questions,
         creates and starts a stateful interview session, and persists it.
         """
-        # 1. Create candidate and register skill
-        candidate_id = generate_id("CAN")
-        candidate = Candidate(id=candidate_id, name=name, email=email)
+        # 1. Create or retrieve candidate and register skill
+        if candidate_id:
+            candidate = self._storage.get_candidate(candidate_id)
+            if not candidate:
+                candidate = Candidate(id=candidate_id, name=name, email=email)
+            else:
+                # Update profile properties with validation
+                if name.strip():
+                    candidate.name = name
+                if email.strip():
+                    candidate.email = email
+        else:
+            candidate_id = generate_id("CAN")
+            candidate = Candidate(id=candidate_id, name=name, email=email)
+            
         candidate.add_skill(topic)
+        self._storage.save_candidate(candidate)
 
         # 2. Fetch questions from generator
         questions = self._question_generator.generate_questions(topic=topic, difficulty=difficulty, count=count)
@@ -46,9 +59,9 @@ class InterviewManager:
         self._storage.save_interview(interview)
         return interview
 
-    def createInterview(self, name: str, email: str, topic: str, difficulty: str, count: int = 3) -> Interview:
+    def createInterview(self, name: str, email: str, topic: str, difficulty: str, count: int = 3, candidateId: Optional[str] = None) -> Interview:
         """CamelCase alias for create_interview."""
-        return self.create_interview(name, email, topic, difficulty, count)
+        return self.create_interview(name, email, topic, difficulty, count, candidateId)
 
     def get_next_question(self, interview_id: str) -> Optional[Question]:
         """Retrieves and advances the interview's current question."""

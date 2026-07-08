@@ -18,7 +18,7 @@ class InterviewRepository(Storage):
         # If it is an in-memory database, we MUST hold a single persistent connection
         # so the schema and data do not get cleared when closing the connection.
         if self.db_path == ":memory:":
-            self._conn = sqlite3.connect(self.db_path)
+            self._conn = sqlite3.connect(self.db_path, check_same_thread=False)
             self._conn.execute("PRAGMA foreign_keys = ON;")
             
         self._init_db()
@@ -26,7 +26,7 @@ class InterviewRepository(Storage):
     def _get_connection(self) -> sqlite3.Connection:
         if self._conn is not None:
             return self._conn
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, check_same_thread=False)
         conn.execute("PRAGMA foreign_keys = ON;")
         return conn
 
@@ -42,9 +42,18 @@ class InterviewRepository(Storage):
                     CREATE TABLE IF NOT EXISTS candidates (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
-                        email TEXT NOT NULL
+                        email TEXT NOT NULL,
+                        skills TEXT
                     );
                 """)
+                try:
+                    conn.execute("ALTER TABLE candidates ADD COLUMN skills TEXT;")
+                except sqlite3.OperationalError:
+                    pass
+                try:
+                    conn.execute("ALTER TABLE interviews ADD COLUMN detailed_evaluations TEXT;")
+                except sqlite3.OperationalError:
+                    pass
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS interviews (
                         id TEXT PRIMARY KEY,
@@ -57,6 +66,7 @@ class InterviewRepository(Storage):
                         feedback TEXT,
                         strengths TEXT,
                         weaknesses TEXT,
+                        detailed_evaluations TEXT,
                         FOREIGN KEY(candidate_id) REFERENCES candidates(id)
                     );
                 """)
@@ -93,6 +103,7 @@ class InterviewRepository(Storage):
         feedback = result.feedback if result else None
         strengths_json = json.dumps(result.strengths) if result else None
         weaknesses_json = json.dumps(result.weaknesses) if result else None
+        detailed_evaluations_json = json.dumps(result.detailed_evaluations) if (result and hasattr(result, "detailed_evaluations")) else None
         
         saved_date = datetime.datetime.now().isoformat()
         
@@ -106,9 +117,10 @@ class InterviewRepository(Storage):
                     saved_date = row[0]
 
                 # 1. Save candidate details
+                skills_json = json.dumps(candidate.selected_skills)
                 conn.execute(
-                    "INSERT OR REPLACE INTO candidates (id, name, email) VALUES (?, ?, ?);",
-                    (candidate.id, candidate.name, candidate.email)
+                    "INSERT OR REPLACE INTO candidates (id, name, email, skills) VALUES (?, ?, ?, ?);",
+                    (candidate.id, candidate.name, candidate.email, skills_json)
                 )
 
                 # 2. Save interview session state
@@ -116,8 +128,8 @@ class InterviewRepository(Storage):
                 conn.execute(
                     """
                     INSERT OR REPLACE INTO interviews 
-                    (id, candidate_id, topic, status, current_question_index, date, score, feedback, strengths, weaknesses) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    (id, candidate_id, topic, status, current_question_index, date, score, feedback, strengths, weaknesses, detailed_evaluations) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                     """,
                     (
                         interview.interview_id,
@@ -129,7 +141,8 @@ class InterviewRepository(Storage):
                         score,
                         feedback,
                         strengths_json,
-                        weaknesses_json
+                        weaknesses_json,
+                        detailed_evaluations_json
                     )
                 )
 
@@ -161,7 +174,7 @@ class InterviewRepository(Storage):
             # 1. Fetch interview row
             cursor = conn.execute(
                 """
-                SELECT candidate_id, status, current_question_index, score, feedback, strengths, weaknesses 
+                SELECT candidate_id, status, current_question_index, score, feedback, strengths, weaknesses, detailed_evaluations 
                 FROM interviews WHERE id = ?;
                 """,
                 (interview_id,)
@@ -170,17 +183,24 @@ class InterviewRepository(Storage):
             if not row:
                 return None
             
-            candidate_id, status, current_question_index, score, feedback, strengths_json, weaknesses_json = row
+            candidate_id, status, current_question_index, score, feedback, strengths_json, weaknesses_json, detailed_evals_json = row
 
             # 2. Fetch candidate row
-            cursor = conn.execute("SELECT name, email FROM candidates WHERE id = ?;", (candidate_id,))
+            cursor = conn.execute("SELECT name, email, skills FROM candidates WHERE id = ?;", (candidate_id,))
             c_row = cursor.fetchone()
             if not c_row:
                 raise ValueError(f"Candidate for interview '{interview_id}' is missing in the database.")
-            c_name, c_email = c_row
+            c_name, c_email, skills_json = c_row
 
             # Reconstruct candidate
             candidate = Candidate(id=candidate_id, name=c_name, email=c_email)
+            if skills_json:
+                try:
+                    skills = json.loads(skills_json)
+                    for s in skills:
+                        candidate.add_skill(s)
+                except Exception:
+                    pass
 
             # 3. Fetch questions sorted by sort_order
             cursor = conn.execute(
@@ -218,12 +238,14 @@ class InterviewRepository(Storage):
             if score is not None or feedback is not None:
                 strengths = json.loads(strengths_json) if strengths_json else []
                 weaknesses = json.loads(weaknesses_json) if weaknesses_json else []
+                detailed_evaluations = json.loads(detailed_evals_json) if (detailed_evals_json and detailed_evals_json != "null") else []
                 interview.result = Result(
                     score=score,
                     feedback=feedback,
                     strengths=strengths,
                     weaknesses=weaknesses,
-                    interview_id=interview_id
+                    interview_id=interview_id,
+                    detailed_evaluations=detailed_evaluations
                 )
 
             return interview
@@ -271,3 +293,46 @@ class InterviewRepository(Storage):
     def getInterviewHistory(self, candidateId: str) -> List[Interview]:
         """CamelCase alias for get_interview_history."""
         return self.get_interview_history(candidateId)
+
+    def save_candidate(self, candidate: Candidate) -> None:
+        """Saves or updates a candidate profile."""
+        conn = self._get_connection()
+        skills_json = json.dumps(candidate.selected_skills)
+        try:
+            with conn:
+                conn.execute(
+                    "INSERT OR REPLACE INTO candidates (id, name, email, skills) VALUES (?, ?, ?, ?);",
+                    (candidate.id, candidate.name, candidate.email, skills_json)
+                )
+        finally:
+            self._close_connection(conn)
+
+    def get_candidate(self, candidate_id: str) -> Optional[Candidate]:
+        """Retrieves a candidate by their unique ID."""
+        conn = self._get_connection()
+        try:
+            cursor = conn.execute("SELECT name, email, skills FROM candidates WHERE id = ?;", (candidate_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            name, email, skills_json = row
+            candidate = Candidate(id=candidate_id, name=name, email=email)
+            if skills_json:
+                try:
+                    skills = json.loads(skills_json)
+                    for s in skills:
+                        candidate.add_skill(s)
+                except Exception:
+                    pass
+            return candidate
+        finally:
+            self._close_connection(conn)
+
+    # CamelCase aliases for candidate persistence
+    def saveCandidate(self, candidate: Candidate) -> None:
+        """CamelCase alias for save_candidate."""
+        self.save_candidate(candidate)
+
+    def getCandidate(self, id: str) -> Optional[Candidate]:
+        """CamelCase alias for get_candidate."""
+        return self.get_candidate(id)
